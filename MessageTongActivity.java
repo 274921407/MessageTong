@@ -1,24 +1,21 @@
 package com.jixin.studyproject.ui;
 
 import android.app.Activity;
-import android.content.Context;
 import android.database.Cursor;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ListView;
 
 import com.jixin.studyproject.R;
+import com.jixin.studyproject.adapter.AsyMessageTongAdaper;
 import com.jixin.studyproject.adapter.MessageTongListAdapter;
 import com.jixin.studyproject.bean.MessageTongBean;
 
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,7 +30,7 @@ public class MessageTongActivity extends Activity {
 
     private List<MessageTongBean> mList;
     private MessageTongListAdapter mAdapter;
-
+    private AsyMessageTongAdaper mmAdapter;
     private RingtoneManager rm;
 
     private Uri defaultUri;
@@ -46,7 +43,8 @@ public class MessageTongActivity extends Activity {
         setContentView(R.layout.activity_messagetong);
         msgtong_list = (ListView) findViewById(R.id.msgtong_list);
         save_bt = (Button) findViewById(R.id.save_bt);
-        initDate();
+//      initDate();
+        newInitData();
         msgtong_list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -54,8 +52,8 @@ public class MessageTongActivity extends Activity {
                     mList.get(i).setIsSelected(false);
                 }
                 mList.get(position).setIsSelected(true);
-                mAdapter.notifyDataSetChanged();
-
+//              mAdapter.notifyDataSetChanged();
+                mmAdapter.notifyDataSetChanged();
                 if (position == 0) {
                     if (defaultRingtong.isPlaying()) {
                         defaultRingtong.stop();
@@ -63,13 +61,16 @@ public class MessageTongActivity extends Activity {
                     defaultRingtong.play();
                 } else {
                     Ringtone rt = rm.getRingtone(position);
-                    if (rt.isPlaying()) {
-                        rt.stop();
+                    if (null != rt) {
+                        if (rt.isPlaying()) {
+                            rt.stop();
+                        }
+                        rt.play();
                     }
-                    rt.play();
                 }
             }
         });
+
     }
 
 
@@ -88,6 +89,9 @@ public class MessageTongActivity extends Activity {
         Cursor cs = rm.getCursor();
         int count = cs.getCount();
         for (int i = 0; i < count; i++) {
+            if (i > 9) {
+                break;
+            }
             Ringtone rt = rm.getRingtone(i);
             MessageTongBean tmp = new MessageTongBean();
             tmp.setMsgTongName(rt.getTitle(this));
@@ -101,4 +105,26 @@ public class MessageTongActivity extends Activity {
     }
 
 
+    private void newInitData() {
+        mList = new ArrayList<>();
+        rm = new RingtoneManager(getApplicationContext());
+        rm.setType(RingtoneManager.TYPE_NOTIFICATION);
+        defaultUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+        defaultRingtong = RingtoneManager.getRingtone(this, defaultUri);
+        MessageTongBean defaultRtb = new MessageTongBean();
+        //defaultRtb.setMsgTongName(defaultRingtong.getTitle(this));
+        defaultRtb.setMsgTongName("跟随系统");
+        defaultRtb.setIsSelected(true);
+        mList.add(defaultRtb);
+        Cursor cs = rm.getCursor();
+        int count = cs.getCount();
+        for (int i = 0; i < count; i++) {
+            MessageTongBean tmp = new MessageTongBean();
+            tmp.setIsSelected(false);
+            mList.add(tmp);
+        }
+
+        mmAdapter = new AsyMessageTongAdaper(mList, this, msgtong_list, rm);
+        msgtong_list.setAdapter(mmAdapter);
+    }
 }
